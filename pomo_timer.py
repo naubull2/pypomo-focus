@@ -113,8 +113,12 @@ class PomodoroApp:
         self.iteration_label = ttk.Label(timer_frame, text="Iteration: 0/0", font=("Helvetica", 12))
         self.iteration_label.grid(row=1, column=0, columnspan=4, pady=5)
 
+        self.indicator_label = tk.Label(timer_frame, text="", width=20, height=2)
+        self.indicator_label.grid(row=2, column=0, columnspan=4, pady=5)
+
         self.timer_label = ttk.Label(timer_frame, text="00:00", font=("Helvetica", 36))
         self.timer_label.grid(row=2, column=0, columnspan=4, pady=10)
+
 
         # Control buttons: Start, Pause/Resume, Skip, Reset.
         self.start_button = ttk.Button(timer_frame, text="Start Work", command=self.start_work)
@@ -132,16 +136,37 @@ class PomodoroApp:
     def update_iteration_label(self):
         self.iteration_label.config(text=f"Iteration: {self.current_iteration}/{self.total_iterations}")
 
+    #def change_state(self, new_state):
+    #    self.state = new_state
+    #    if new_state == "work":
+    #        self.state_label.config(text="State: Work", foreground="green")
+    #    elif new_state == "short_break":
+    #        self.state_label.config(text="State: Short Break", foreground="orange")
+    #    elif new_state == "long_break":
+    #        self.state_label.config(text="State: Long Break", foreground="blue")
+    #    else:
+    #        self.state_label.config(text="State: Idle", foreground="black")
     def change_state(self, new_state):
+        """Update the timer state and show a visual color change indicator."""
         self.state = new_state
+
+        # Set indicator color
         if new_state == "work":
-            self.state_label.config(text="State: Work", foreground="green")
+            self.state_label.config(text="State: Work", foreground="#AD504A")
+            self.indicator_label.config(bg="#AD504A")
+
         elif new_state == "short_break":
-            self.state_label.config(text="State: Short Break", foreground="orange")
+            self.state_label.config(text="State: Short Break", foreground="#5E895E")
+            self.indicator_label.config(bg="#5E895E")
+
         elif new_state == "long_break":
-            self.state_label.config(text="State: Long Break", foreground="blue")
-        else:
+            self.state_label.config(text="State: Long Break", foreground="#476F94")
+            self.indicator_label.config(bg="#476F94")
+
+        else:  # Idle state
             self.state_label.config(text="State: Idle", foreground="black")
+            self.indicator_label.config(bg="#E4E4E4")  # Gray for Idle
+
 
     def start_work(self):
         self.root.focus()  # Remove focus from entries
