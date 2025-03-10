@@ -9,15 +9,38 @@ import tkinter as tk
 from tkinter import ttk, messagebox
 import json
 import os
+import platform
+
+from pathlib import Path
 
 
-CONFIG_FILE = "pomodoro_config.json"
+CONFIG_FILE = str(Path(__file__).parent/"pomodoro_config.json")
 DEFAULT_CONFIG = {
     "work_duration": 25,     # minutes
     "short_break": 5,        # minutes
     "long_break": 15,        # minutes
     "long_break_every": 4    # after how many work sessions a long break happens
 }
+
+
+# Simplest OS supported TTS: only tested on osX
+def speak(sentence):
+    system_name = platform.system()
+    
+    if system_name == "Darwin":  # macOS
+        os.system(f'say "{sentence}"')
+    elif system_name == "Windows":  # Windows
+        os.system(f'powershell -Command "Add-Type –AssemblyName System.Speech; (New-Object System.Speech.Synthesis.SpeechSynthesizer).Speak(\'{sentence}\')"')
+    elif system_name == "Linux":  # Linux (requires espeak or festival)
+        if os.system("command -v espeak >/dev/null 2>&1") == 0:
+            os.system(f'espeak "{sentence}"')
+        elif os.system("command -v festival >/dev/null 2>&1") == 0:
+            os.system(f'echo "{sentence}" | festival --tts')
+        else:
+            print("No supported TTS engine found on Linux.")
+    else:
+        print("Unsupported OS for TTS.")
+
 
 class PomodoroApp:
     def __init__(self, root):
@@ -136,16 +159,6 @@ class PomodoroApp:
     def update_iteration_label(self):
         self.iteration_label.config(text=f"Iteration: {self.current_iteration}/{self.total_iterations}")
 
-    #def change_state(self, new_state):
-    #    self.state = new_state
-    #    if new_state == "work":
-    #        self.state_label.config(text="State: Work", foreground="green")
-    #    elif new_state == "short_break":
-    #        self.state_label.config(text="State: Short Break", foreground="orange")
-    #    elif new_state == "long_break":
-    #        self.state_label.config(text="State: Long Break", foreground="blue")
-    #    else:
-    #        self.state_label.config(text="State: Idle", foreground="black")
     def change_state(self, new_state):
         """Update the timer state and show a visual color change indicator."""
         self.state = new_state
@@ -158,14 +171,18 @@ class PomodoroApp:
         elif new_state == "short_break":
             self.state_label.config(text="State: Short Break", foreground="#5E895E")
             self.indicator_label.config(bg="#5E895E")
+            speak("Take a short break.")
 
         elif new_state == "long_break":
             self.state_label.config(text="State: Long Break", foreground="#476F94")
             self.indicator_label.config(bg="#476F94")
+            speak("Take some rest!")
 
         else:  # Idle state
             self.state_label.config(text="State: Idle", foreground="black")
             self.indicator_label.config(bg="#E4E4E4")  # Gray for Idle
+            self.root.bell()
+
 
 
     def start_work(self):
@@ -194,7 +211,7 @@ class PomodoroApp:
             self.paused = False
             self.update_timer()
         else:
-            messagebox.showinfo("Info", "All work sessions completed. Great job!")
+            messagebox.showinfo("Info", f"{self.task_entry.get().strip()} completed. Great job!")
 
     def start_break(self, break_type):
         self.change_state(break_type)
@@ -255,7 +272,8 @@ class PomodoroApp:
                     self.start_break("short_break")
             else:
                 self.change_state("idle")
-                messagebox.showinfo("Done", "All work sessions completed. Great job!")
+                speak(f"{self.task_entry.get().strip()} completed!")
+                messagebox.showinfo("Done", f"{self.task_entry.get().strip()} completed. Great job!")
                 self.start_button.config(state="normal")
                 self.pause_button.config(state="disabled")
         elif self.state in ["short_break", "long_break"]:
